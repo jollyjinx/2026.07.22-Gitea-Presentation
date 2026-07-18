@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gitea in Practice</title>
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --ink: #182026;
+      --muted: #596169;
+      --line: #d8d2c4;
+      --accent: #0f766e;
+      --accent-2: #b45309;
+      --gitea: #609926;
+      --panel: #ffffff;
+      --code-bg: #15202b;
+      --code-ink: #edf2f7;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow: hidden;
+    }
+    a { color: var(--accent); text-decoration-thickness: 0.08em; text-underline-offset: 0.16em; }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: clamp(3.2rem, 8vw, 7rem); line-height: 0.95; max-width: 12ch; }
+    h2 { color: var(--muted); font-size: clamp(1.25rem, 2.2vw, 2rem); font-weight: 500; line-height: 1.25; max-width: 38ch; }
+    h3 { font-size: clamp(1.35rem, 2.2vw, 2.1rem); line-height: 1.12; }
+
+    .deck { height: 100vh; position: relative; width: 100vw; }
+    .slide {
+      display: none;
+      inset: 0;
+      min-height: 100vh;
+      overflow: auto;
+      padding: 5.2vh 7vw 8vh;
+      position: absolute;
+      width: 100vw;
+    }
+    .slide.active { align-content: center; display: grid; gap: 2.4rem; }
+    .slide.compact.active { align-content: start; }
+    .slide.center { text-align: center; }
+    .slide::before {
+      border-top: 5px solid var(--accent);
+      content: "";
+      left: 7vw;
+      position: absolute;
+      right: 7vw;
+      top: 3.5vh;
+    }
+
+    .title-layout { display: grid; gap: 1.8rem; justify-items: start; }
+    .title-layout .eyebrow { font-size: clamp(0.9rem, 1.2vw, 1.15rem); line-height: 1.2; margin: 0; text-transform: uppercase; }
+    .eyebrow {
+      color: var(--accent-2);
+      font-size: clamp(2.35rem, 5vw, 5rem);
+      font-weight: 700;
+      line-height: 1;
+      margin: 0 0 0.45rem;
+      max-width: 17ch;
+    }
+    .lede { color: var(--muted); font-size: clamp(1.25rem, 2.2vw, 2rem); line-height: 1.35; max-width: 48ch; }
+    .lede strong { color: var(--ink); }
+
+    .grid { display: grid; gap: 1.35rem; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); }
+    .two-column { align-items: center; display: grid; gap: 2rem; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); }
+    .three-column { display: grid; gap: 1.1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 18px 42px rgb(34 31 25 / 8%);
+      padding: clamp(1rem, 1.8vw, 1.5rem);
+    }
+    .card h3 { margin-bottom: 0.55rem; }
+    .card p { color: var(--muted); font-size: clamp(1rem, 1.45vw, 1.35rem); line-height: 1.35; }
+    .metric { color: var(--gitea); font-size: clamp(2.5rem, 5vw, 5rem); font-weight: 800; line-height: 1; }
+
+    ul, ol { display: grid; gap: 0.7rem; margin: 0; padding-left: 1.4em; }
+    li { font-size: clamp(1.15rem, 1.8vw, 1.75rem); line-height: 1.25; }
+    .big-list li { font-size: clamp(1.35rem, 2.2vw, 2.05rem); }
+    .small-list li { font-size: clamp(0.98rem, 1.25vw, 1.24rem); }
+    .dense-list { gap: 0.42rem; padding-left: 1.1em; }
+    .dense-list li { font-size: clamp(0.78rem, 0.98vw, 1.02rem); line-height: 1.16; }
+    .check-list { list-style: none; padding: 0; }
+    .check-list li { padding-left: 1.75em; position: relative; }
+    .check-list li::before { color: var(--gitea); content: "✓"; font-weight: 900; left: 0; position: absolute; }
+
+    .image-frame {
+      align-items: center;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      cursor: zoom-in;
+      display: flex;
+      justify-content: center;
+      max-height: 64vh;
+      min-height: 18rem;
+      overflow: hidden;
+      padding: 1rem;
+    }
+    .image-frame img { display: block; height: auto; max-height: 56vh; max-width: 100%; object-fit: contain; width: auto; }
+    .logo-frame { background: transparent; border: 0; box-shadow: none; }
+
+    pre {
+      background: var(--code-bg);
+      border-radius: 8px;
+      color: var(--code-ink);
+      font-size: clamp(0.72rem, 1.05vw, 1rem);
+      line-height: 1.35;
+      margin: 0;
+      max-height: 68vh;
+      overflow: auto;
+      padding: 1.2rem;
+      tab-size: 2;
+      white-space: pre;
+    }
+    code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+    .text-preview { cursor: zoom-in; max-height: 56vh; }
+    .comment { color: #7dd3fc; }
+    .command { color: #a7f3d0; }
+    .warn { color: #fbbf24; }
+
+    .flow { align-items: stretch; display: grid; gap: 0.75rem; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .flow-step {
+      align-items: center;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-top: 5px solid var(--gitea);
+      border-radius: 8px;
+      display: grid;
+      min-height: 9rem;
+      padding: 1rem;
+      position: relative;
+      text-align: center;
+    }
+    .flow-step:not(:last-child)::after {
+      color: var(--accent-2);
+      content: "→";
+      font-size: 2rem;
+      font-weight: 800;
+      position: absolute;
+      right: -1.45rem;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 2;
+    }
+    .flow-step strong { display: block; font-size: clamp(1rem, 1.55vw, 1.45rem); }
+    .flow-step span { color: var(--muted); font-size: clamp(0.78rem, 1vw, 1rem); }
+
+    .speaker-note { color: var(--muted); font-size: clamp(0.95rem, 1.2vw, 1.15rem); line-height: 1.35; max-width: 78ch; }
+    .source { color: var(--muted); font-size: clamp(0.72rem, 0.85vw, 0.9rem); line-height: 1.25; }
+    .link-list { list-style: none; padding-left: 0; }
+    .link-list li {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: clamp(0.82rem, 1.05vw, 1.05rem);
+      line-height: 1.25;
+      padding: 0.65rem 0.8rem;
+    }
+    .link-list strong { display: block; margin-bottom: 0.15rem; }
+
+    .meta {
+      align-items: center;
+      bottom: 2.4vh;
+      color: var(--muted);
+      display: flex;
+      font-size: 0.95rem;
+      gap: 1rem;
+      justify-content: space-between;
+      left: 7vw;
+      position: fixed;
+      right: 7vw;
+      z-index: 20;
+    }
+    .progress { background: var(--line); border-radius: 999px; flex: 1; height: 0.42rem; overflow: hidden; }
+    .progress span { background: var(--accent); display: block; height: 100%; width: 0; }
+    .controls { display: flex; gap: 0.45rem; }
+    button {
+      align-items: center;
+      appearance: none;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      cursor: pointer;
+      display: inline-flex;
+      font: inherit;
+      height: 2.35rem;
+      justify-content: center;
+      min-width: 2.35rem;
+      padding: 0 0.75rem;
+    }
+    button:hover, button:focus-visible { border-color: var(--accent); outline: none; }
+
+    .lightbox {
+      align-items: center;
+      background: rgb(24 32 38 / 92%);
+      display: none;
+      inset: 0;
+      justify-content: center;
+      padding: 4vh 4vw;
+      position: fixed;
+      z-index: 100;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img { background: var(--panel); border-radius: 8px; display: none; max-height: 92vh; max-width: 92vw; padding: 0.6rem; }
+    .lightbox.show-image img { display: block; }
+    .lightbox pre { cursor: text; display: none; font-size: clamp(0.82rem, 1.1vw, 1.08rem); max-height: 86vh; max-width: 88vw; min-width: min(72rem, 88vw); white-space: pre-wrap; }
+    .lightbox.show-text pre { display: block; }
+    .lightbox button { position: fixed; right: 2rem; top: 1.5rem; }
+
+    @media (max-width: 820px) {
+      body { overflow: auto; }
+      .slide { position: relative; }
+      .slide, .slide.active { display: grid; min-height: auto; }
+      .slide:not(.active) { display: none; }
+      .two-column, .three-column, .flow { grid-template-columns: 1fr; }
+      .flow-step:not(:last-child)::after { bottom: -1.6rem; content: "↓"; left: 50%; right: auto; top: auto; transform: translateX(-50%); }
+      .meta { background: rgb(247 245 239 / 92%); bottom: 0; left: 0; padding: 0.7rem 1rem; right: 0; }
+    }
+
+    @page { size: A4 landscape; margin: 0; }
+    @media print {
+      html, body { background: #fff; height: auto; overflow: visible; }
+      .deck { height: auto; width: auto; }
+      .slide, .slide.active {
+        align-content: center;
+        break-after: page;
+        break-inside: avoid;
+        display: grid;
+        height: 210mm;
+        max-height: 210mm;
+        min-height: 210mm;
+        overflow: hidden;
+        padding: 12mm 16mm 14mm;
+        position: relative;
+        width: 297mm;
+      }
+      .slide.compact, .slide.compact.active { align-content: start; }
+      .slide::before { left: 16mm; right: 16mm; top: 8mm; }
+      h1 { font-size: 34pt; }
+      .eyebrow { font-size: 22pt; }
+      h2, .lede, li { font-size: 11.5pt; line-height: 1.18; }
+      h3, .speaker-note { font-size: 9pt; line-height: 1.15; }
+      .big-list li { font-size: 13pt; }
+      .dense-list li, .small-list li, .link-list li { font-size: 8pt; line-height: 1.1; }
+      .card { box-shadow: none; padding: 0.65rem 0.8rem; }
+      pre, .lightbox pre { font-size: 7.5pt; line-height: 1.2; max-height: none; overflow: hidden; padding: 0.7rem; }
+      footer.meta, .meta, .lightbox { display: none !important; visibility: hidden !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" aria-live="polite">
+    <section class="slide active">
+      <div class="two-column">
+        <div class="title-layout">
+          <p class="eyebrow">July 2026</p>
+          <h1>Gitea in Practice</h1>
+          <p class="lede">Run your own collaborative Git service—and complete the whole path from issue to tested merge.</p>
+        </div>
+        <figure class="image-frame logo-frame">
+          <img src="images/gitea-logo.svg" alt="Official Gitea logo">
+        </figure>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div>
+        <p class="eyebrow">Goal</p>
+        <h2>Leave with a working mental model</h2>
+      </div>
+      <ul class="big-list check-list">
+        <li>Start Gitea locally with persistent data.</li>
+        <li>Move one change through issue, branch, pull request, review, and merge.</li>
+        <li>Add a status check and protect <code>main</code>.</li>
+        <li>Know what must change before production.</li>
+      </ul>
+    </section>
+
+    <section class="slide">
+      <div>
+        <p class="eyebrow">Agenda</p>
+        <h2>One end-to-end workflow</h2>
+      </div>
+      <ol class="big-list">
+        <li>What Gitea owns</li>
+        <li>Start an instance</li>
+        <li>Collaborate on a change</li>
+        <li>Automate and publish</li>
+        <li>Operate it safely</li>
+      </ol>
+    </section>
+
+    <section class="slide">
+      <div>
+        <p class="eyebrow">Mental Model</p>
+        <h2>Gitea is the forge around Git</h2>
+      </div>
+      <div class="grid">
+        <article class="card"><h3>Git hosting</h3><p>Repositories over SSH and HTTP(S), with users, organizations, teams, and permissions.</p></article>
+        <article class="card"><h3>Collaboration</h3><p>Issues, pull requests, reviews, projects, releases, wikis, and notifications.</p></article>
+        <article class="card"><h3>Automation</h3><p>Gitea Actions plus external runners, webhooks, and a REST API.</p></article>
+        <article class="card"><h3>Distribution</h3><p>Package registries for OCI images and common language ecosystems.</p></article>
+      </div>
+      <p class="source">Source: <a href="https://docs.gitea.com/">Gitea documentation — What is Gitea?</a></p>
+    </section>
+
+    <section class="slide">
+      <div>
+        <p class="eyebrow">Demo Architecture</p>
+        <h2>Start small; keep the data outside the container</h2>
+      </div>
+      <div class="flow">
+        <div class="flow-step"><div><strong>Browser</strong><span>localhost:3000</span></div></div>
+        <div class="flow-step"><div><strong>Gitea 1.26.4</strong><span>Web + SSH</span></div></div>
+        <div class="flow-step"><div><strong>SQLite</strong><span>Built in</span></div></div>
+        <div class="flow-step"><div><strong>/data</strong><span>Named volume</span></div></div>
+        <div class="flow-step"><div><strong>Git client</strong><span>SSH on 2222</span></div></div>
+      </div>
+      <p class="speaker-note">The container is disposable. The volume is not.</p>
+    </section>
+
+    <section class="slide compact">
+      <div>
+        <p class="eyebrow">Start Gitea</p>
+        <h2>Two commands create a durable demo</h2>
+      </div>
+      <pre class="text-preview"><code><span class="comment"># Apple container CLI — tested with Gitea 1.26.4</span>
+<span class="command">container volume create gitea-data</span>
+
+<span class="command">container run --name gitea --detach \
+  --publish 3000:3000 \
+  --publish 2222:22 \
+  --volume gitea-data:/data \
+  --env GITEA__server__SSH_PORT=2222 \
+  --env GITEA__server__ROOT_URL=http://localhost:3000/ \
+  docker.gitea.com/gitea:1.26.4</span>
+
+<span class="comment"># Observe startup</span>
+container logs gitea</code></pre>
+      <p class="source">Adapted from the <a href="https://docs.gitea.com/1.26/installation/install-with-docker">official container installation guide</a>; commands use Apple <code>container</code>.</p>
+    </section>
+
+    <section class="slide">
+      <div>
+        <p class="eyebrow">First Run</p>
+        <h2>The installer turns runtime choices into configuration</h2>
+      </div>
+      <div class="two-column">
+        <ul class="big-list">
+          <li>Database: SQLite3 for this demo</li>
+          <li>Site title and server domain</li>
+          <li>HTTP port <code>3000</code></li>
+          <li>SSH port <code>2222</code></li>
+          <li>Create the first administrator</li>
+        </ul>
+        <div class="card">
+          <p class="metric">/data</p>
+          <h3>One directory to protect</h3>
+          <p>The official image keeps configuration, repositories, attachments, indexes, and the SQLite database under the persistent data tree.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div>
+        <p class="eyebrow">Repository Setup</p>
+        <h2>Organize ownership before adding code</h2>
+      </div>
+      <div class="three-column">
+        <article class="card"><h3>Organization</h3><p>Stable owner for repositories, packages, runners, and shared identity.</p></article>
+        <article class="card"><h3>Teams</h3><p>Group people by responsibility and grant repository-unit permissions.</p></article>
+        <article class="card"><h3>Repository</h3><p>Choose visibility, initialize a README, then add collaborators and rules.</p></article>
+      </div>
+      <p class="speaker-note">Demo: create organization <code>tea-lab</code>, team <code>developers</code>, and repository <code>hello-gitea</code>.</p>
+    </section>
+
+    <section class="slide compact">
+      <div>
+        <p class="eyebrow">Everyday Git</p>
+        <h2>Gitea does not replace the Git workflow</h2>
+      </div>
+      <pre class="text-preview"><code><span class="comment"># Add an SSH key in User settings → SSH / GPG Keys first</span>
+git clone ssh://git@localhost:2222/tea-lab/hello-gitea.git
+cd hello-gitea
+
+git switch -c feature/greeting
+printf 'Hello from Gitea\n' &gt; greeting.txt
+git add greeting.txt
+git commit -m "Add a friendly greeting"
+git push -u origin feature/greeting</code></pre>
+      <p class="speaker-note">The push response links directly to the compare page for creating a pull request.</p>
+    </section>
+
+    <section class="slide">
+      <div>
+        <p class="eyebrow">Collaboration Loop</p>
+        <h2>Every change gains context and a decision trail</h2>
+      </div>
+      <div class="flow">
+        <div class="flow-step"><div><strong>Issue</strong><span>Why change?</span></div></div>
+        <div class="flow-step"><div><strong>Branch</strong><span>Isolate work</span></div></div>
+        <div class="flow-step"><div><strong>Pull request</strong><span>Explain change</span></div></div>
+        <div class="flow-step"><div><strong>Review + CI</strong><span>Check quality</span></div></div>
+        <div class="flow-step"><div><strong>Merge</strong><span>Record decision</span></div></div>
+      </div>
+      <p class="source">Pull requests support comments, requested changes, approval, and merge. Source: <a href="https://docs.gitea.com/usage/pull-request">Gitea pull request documentation</a>.</p>
+    </section>
+
+    <section class="slide">
+      <div>
+        <p class="eyebrow">Pull Request</p>
+        <h2>Review the intent, the diff, and the evidence</h2>
+      </div>
+      <div class="grid">
+        <article class="card"><h3>Intent</h3><p>Use a descriptive title, explain the reason, and link the issue with <code>Closes #1</code>.</p></article>
+        <article class="card"><h3>Diff</h3><p>Comment on exact lines, request changes, or approve the proposed branch.</p></article>
+        <article class="card"><h3>Evidence</h3><p>Require tests and status checks before the merge button becomes available.</p></article>
+      </div>
+      <p class="speaker-note">Demo: open a pull request, request one tiny change, push the fix, approve, then merge.</p>
+    </section>
+
+    <section class="slide">
+      <div>
+        <p class="eyebrow">Branch Protection</p>
+        <h2>Turn the team agreement into an enforced rule</h2>
+      </div>
+      <div class="two-column">
+        <ul class="big-list check-list">
+          <li>Block direct pushes to <code>main</code></li>
+          <li>Require one approval</li>
+          <li>Dismiss stale approvals</li>
+          <li>Require successful status checks</li>
+          <li>Apply rules to administrators</li>
+        </ul>
+        <div class="card">
+          <h3>Settings → Branches</h3>
+          <p>Create a rule for <code>main</code>. For release branches, use a pattern such as <code>release/*</code>. Put specific patterns ahead of broad fallbacks.</p>
+        </div>
+      </div>
+      <p class="source">Source: <a href="https://docs.gitea.com/usage/access-control/protected-branches">Protected branches</a>.</p>
+    </section>
+
+    <section class="slide compact">
+      <div>
+        <p class="eyebrow">Gitea Actions</p>
+        <h2>A workflow file turns every push into evidence</h2>
+      </div>
+      <pre class="text-preview"><code><span class="comment"># .gitea/workflows/test.yaml</span>
+name: test
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: test "$(cat greeting.txt)" = "Hello from Gitea"</code></pre>
+      <p class="speaker-note">Enable Actions for the repository and register a Gitea runner. Prefer a separate runner host for real workloads.</p>
+      <p class="source">Source: <a href="https://docs.gitea.com/usage/actions/quickstart">Gitea Actions quick start</a> and <a href="https://docs.gitea.com/usage/actions/token-permissions">job token permissions</a>.</p>
+    </section>
+
+    <section class="slide">
+      <div>
+        <p class="eyebrow">Runner Boundary</p>
+        <h2>The server schedules; the runner executes</h2>
+      </div>
+      <div class="flow">
+        <div class="flow-step"><div><strong>Push / PR</strong><span>Event</span></div></div>
+        <div class="flow-step"><div><strong>Gitea</strong><span>Queues job</span></div></div>
+        <div class="flow-step"><div><strong>Runner</strong><span>Polls server</span></div></div>
+        <div class="flow-step"><div><strong>Job</strong><span>Runs isolated</span></div></div>
+        <div class="flow-step"><div><strong>Status</strong><span>Gates merge</span></div></div>
+      </div>
+      <ul class="small-list">
+        <li>Do not register the runner with <code>localhost</code>; job environments must be able to reach the instance URL.</li>
+        <li>Treat runners as code-execution infrastructure, not as harmless agents.</li>
+      </ul>
+    </section>
+
+    <section class="slide compact">
+      <div>
+        <p class="eyebrow">Package Registry</p>
+        <h2>Publish build output beside the source and release</h2>
+      </div>
+      <div class="two-column">
+        <pre class="text-preview"><code><span class="comment"># Generic package example</span>
+export GITEA_TOKEN='…'
+
+curl --user "patrick:$GITEA_TOKEN" \
+  --upload-file hello.tar.gz \
+  http://localhost:3000/api/packages/tea-lab/generic/hello/1.0.0/hello.tar.gz</code></pre>
+        <div class="card">
+          <h3>One owner, many ecosystems</h3>
+          <p>Gitea supports OCI containers, Swift, npm, Maven, NuGet, PyPI, Cargo, generic files, and many other package formats.</p>
+          <p class="speaker-note">Use a personal access token with package write permission—not an account password.</p>
+        </div>
+      </div>
+      <p class="source">Source: <a href="https://docs.gitea.com/usage/packages/overview/">Package registry overview</a> and <a href="https://docs.gitea.com/usage/packages/generic">generic packages</a>.</p>
+    </section>
+
+    <section class="slide compact">
+      <div>
+        <p class="eyebrow">API</p>
+        <h2>Automate the forge through stable interfaces</h2>
+      </div>
+      <div class="two-column">
+        <pre class="text-preview"><code><span class="comment"># List repositories for an organization</span>
+curl --header "Authorization: token $GITEA_TOKEN" \
+  http://localhost:3000/api/v1/orgs/tea-lab/repos
+
+<span class="comment"># Built-in API explorer</span>
+open http://localhost:3000/api/swagger</code></pre>
+        <ul class="big-list">
+          <li>REST API for users, repositories, issues, pull requests, releases, and administration</li>
+          <li>Webhooks for event-driven integration</li>
+          <li><code>tea</code> CLI for common Gitea operations</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div>
+        <p class="eyebrow">Production Shape</p>
+        <h2>The demo is intentionally not a production topology</h2>
+      </div>
+      <div class="grid">
+        <article class="card"><h3>Database</h3><p>Use PostgreSQL or MySQL when operational scale, tooling, or availability requires it.</p></article>
+        <article class="card"><h3>Ingress</h3><p>Terminate HTTPS at a reverse proxy and set <code>ROOT_URL</code>, domain, and SSH ports correctly.</p></article>
+        <article class="card"><h3>Identity</h3><p>Connect SMTP and your authentication provider; restrict registration and administrator access.</p></article>
+        <article class="card"><h3>Storage</h3><p>Plan capacity for repositories, LFS, attachments, Actions artifacts, packages, and backups.</p></article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <div>
+        <p class="eyebrow">Backup</p>
+        <h2>A backup is complete only when database and files agree</h2>
+      </div>
+      <div class="two-column">
+        <ul class="big-list">
+          <li>Stop writes or take a consistent snapshot.</li>
+          <li>Back up configuration and secrets.</li>
+          <li>Back up repositories, attachments, LFS, packages, and Actions data.</li>
+          <li>Back up the database with its native tooling.</li>
+          <li>Restore into a test instance regularly.</li>
+        </ul>
+        <div class="card">
+          <h3>Upgrade sequence</h3>
+          <p>Read release notes → stage the new version → stop → back up → change the pinned image tag → start → verify migrations and core workflows.</p>
+        </div>
+      </div>
+      <p class="source">Sources: <a href="https://docs.gitea.com/administration/backup-and-restore">Backup and Restore</a> and <a href="https://docs.gitea.com/installation/upgrade-from-gitea">Upgrade from an old Gitea</a>.</p>
+    </section>
+
+    <section class="slide">
+      <div>
+        <p class="eyebrow">Security Baseline</p>
+        <h2>Self-hosting moves responsibility to the operator</h2>
+      </div>
+      <ul class="big-list check-list">
+        <li>Pin versions and apply security releases promptly.</li>
+        <li>Use HTTPS, secure cookies, and a trusted reverse proxy configuration.</li>
+        <li>Require 2FA where appropriate; use scoped tokens for automation.</li>
+        <li>Protect default branches and restrict force pushes.</li>
+        <li>Isolate Actions runners and treat pull-request code as untrusted.</li>
+        <li>Monitor logs, storage growth, failed jobs, and backup freshness.</li>
+      </ul>
+    </section>
+
+    <section class="slide">
+      <div>
+        <p class="eyebrow">Practical Exercise</p>
+        <h2>Complete the loop yourself</h2>
+      </div>
+      <ol class="big-list">
+        <li>Create an issue: “Add a greeting.”</li>
+        <li>Create a branch, commit a file, and push it.</li>
+        <li>Open a pull request that closes the issue.</li>
+        <li>Review the diff and merge it.</li>
+        <li>Protect <code>main</code>, then prove a direct push is rejected.</li>
+      </ol>
+      <p class="speaker-note">Stretch goal: add the workflow from the Actions slide and require its status check.</p>
+    </section>
+
+    <section class="slide">
+      <div>
+        <p class="eyebrow">Decision</p>
+        <h2>Gitea fits when ownership matters more than outsourcing the forge</h2>
+      </div>
+      <div class="two-column">
+        <div class="card">
+          <h3>Strong fit</h3>
+          <ul class="small-list check-list">
+            <li>Self-hosting and data control</li>
+            <li>Familiar GitHub-like workflow</li>
+            <li>Small operational footprint</li>
+            <li>Integrated packages and CI</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Count the cost</h3>
+          <ul class="small-list">
+            <li>Upgrades, security, backups, and monitoring are yours.</li>
+            <li>Actions compatibility is broad, not identical to GitHub Actions.</li>
+            <li>High availability and large installations need deliberate architecture.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide center">
+      <div class="title-layout">
+        <p class="eyebrow">July 2026</p>
+        <h1>Own the forge</h1>
+        <p class="lede"><strong>Keep the workflow familiar.</strong></p>
+        <p class="lede">Patrick Stein</p>
+      </div>
+    </section>
+
+    <section class="slide compact">
+      <div>
+        <p class="eyebrow">References</p>
+        <h2>Official Gitea documentation used in this deck</h2>
+      </div>
+      <div class="two-column">
+        <ul class="link-list">
+          <li><strong>What is Gitea?</strong><a href="https://docs.gitea.com/">docs.gitea.com</a></li>
+          <li><strong>Installation with containers</strong><a href="https://docs.gitea.com/1.26/installation/install-with-docker">docs.gitea.com/1.26/installation/install-with-docker</a></li>
+          <li><strong>Pull requests</strong><a href="https://docs.gitea.com/usage/pull-request">docs.gitea.com/usage/pull-request</a></li>
+          <li><strong>Protected branches</strong><a href="https://docs.gitea.com/usage/access-control/protected-branches">docs.gitea.com/usage/access-control/protected-branches</a></li>
+          <li><strong>Actions quick start</strong><a href="https://docs.gitea.com/usage/actions/quickstart">docs.gitea.com/usage/actions/quickstart</a></li>
+        </ul>
+        <ul class="link-list">
+          <li><strong>Actions token permissions</strong><a href="https://docs.gitea.com/usage/actions/token-permissions">docs.gitea.com/usage/actions/token-permissions</a></li>
+          <li><strong>Package registry</strong><a href="https://docs.gitea.com/usage/packages/overview/">docs.gitea.com/usage/packages/overview</a></li>
+          <li><strong>Generic packages</strong><a href="https://docs.gitea.com/usage/packages/generic">docs.gitea.com/usage/packages/generic</a></li>
+          <li><strong>Backup and restore</strong><a href="https://docs.gitea.com/administration/backup-and-restore">docs.gitea.com/administration/backup-and-restore</a></li>
+          <li><strong>Upgrade guide</strong><a href="https://docs.gitea.com/installation/upgrade-from-gitea">docs.gitea.com/installation/upgrade-from-gitea</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="meta" aria-label="Presentation controls">
+    <span id="counter">1 / 22</span>
+    <div class="progress" aria-hidden="true"><span id="progress"></span></div>
+    <div class="controls">
+      <button id="prev" type="button" aria-label="Previous slide" title="Previous slide">&lt;</button>
+      <button id="next" type="button" aria-label="Next slide" title="Next slide">&gt;</button>
+    </div>
+  </footer>
+
+  <div class="lightbox" id="lightbox" aria-modal="true" role="dialog" aria-label="Expanded content">
+    <button id="close-lightbox" type="button" aria-label="Close expanded content" title="Close expanded content">x</button>
+    <img id="lightbox-image" src="" alt="">
+    <pre id="lightbox-text" tabindex="0"><code></code></pre>
+  </div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const counter = document.querySelector("#counter");
+    const progress = document.querySelector("#progress");
+    const prev = document.querySelector("#prev");
+    const next = document.querySelector("#next");
+    const lightbox = document.querySelector("#lightbox");
+    const lightboxImage = document.querySelector("#lightbox-image");
+    const lightboxText = document.querySelector("#lightbox-text");
+    const lightboxTextCode = document.querySelector("#lightbox-text code");
+    const closeLightbox = document.querySelector("#close-lightbox");
+    let index = 0;
+    let lightboxOpen = false;
+
+    function showSlide(nextIndex) {
+      index = Math.max(0, Math.min(slides.length - 1, nextIndex));
+      slides.forEach((slide, slideIndex) => slide.classList.toggle("active", slideIndex === index));
+      counter.textContent = `${index + 1} / ${slides.length}`;
+      progress.style.width = `${((index + 1) / slides.length) * 100}%`;
+      window.location.hash = `slide-${index + 1}`;
+    }
+
+    function move(delta) { showSlide(index + delta); }
+
+    function openImageLightbox(image) {
+      lightboxImage.src = image.currentSrc || image.src;
+      lightboxImage.alt = image.alt;
+      lightboxTextCode.textContent = "";
+      lightbox.classList.remove("show-text");
+      lightbox.classList.add("open", "show-image");
+      lightboxOpen = true;
+      closeLightbox.focus();
+    }
+
+    function openTextLightbox(pre) {
+      lightboxImage.src = "";
+      lightboxImage.alt = "";
+      lightboxTextCode.textContent = pre.textContent;
+      lightboxText.scrollTop = 0;
+      lightbox.classList.remove("show-image");
+      lightbox.classList.add("open", "show-text");
+      lightboxOpen = true;
+      lightboxText.focus();
+    }
+
+    function hideLightbox() {
+      lightbox.classList.remove("open", "show-image", "show-text");
+      lightboxImage.src = "";
+      lightboxImage.alt = "";
+      lightboxTextCode.textContent = "";
+      lightboxOpen = false;
+    }
+
+    prev.addEventListener("click", () => move(-1));
+    next.addEventListener("click", () => move(1));
+    closeLightbox.addEventListener("click", hideLightbox);
+    lightbox.addEventListener("click", (event) => { if (event.target === lightbox) hideLightbox(); });
+
+    document.querySelectorAll(".image-frame img").forEach((image) => {
+      image.addEventListener("click", () => openImageLightbox(image));
+      image.setAttribute("tabindex", "0");
+      image.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openImageLightbox(image); }
+      });
+    });
+
+    document.querySelectorAll(".text-preview").forEach((pre) => {
+      pre.addEventListener("click", () => openTextLightbox(pre));
+      pre.setAttribute("tabindex", "0");
+      pre.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openTextLightbox(pre); }
+      });
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (lightboxOpen) {
+        if (event.key === "Escape") { event.preventDefault(); hideLightbox(); }
+        return;
+      }
+      if (event.key === "ArrowRight" || event.key === " " || event.key === "PageDown") { event.preventDefault(); move(1); }
+      if (event.key === "ArrowLeft" || event.key === "PageUp") { event.preventDefault(); move(-1); }
+      if (event.key === "Home") { event.preventDefault(); showSlide(0); }
+      if (event.key === "End") { event.preventDefault(); showSlide(slides.length - 1); }
+    });
+
+    const hashMatch = window.location.hash.match(/^#slide-(\d+)$/);
+    showSlide(hashMatch ? Number(hashMatch[1]) - 1 : 0);
+  </script>
+</body>
+</html>
