@@ -36,7 +36,7 @@ section > footer {
 ### Run your own collaborative Git service
 
  Patrick Stein
-
+ 
 ---
 
 # Gitea

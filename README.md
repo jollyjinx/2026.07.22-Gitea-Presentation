@@ -19,3 +19,18 @@ The `--html` option enables the small amount of structural HTML used for two-col
 
 The local logo must remain at `images/gitea-logo.svg` so Marp can resolve it from the Markdown source.
 
+## Release builds
+
+The committed Gitea Actions workflow at
+`.gitea/workflows/presentation-release.yml` builds a PDF and an HTML bundle
+when a tag beginning with `v` is pushed. It publishes both files as assets on
+the corresponding Gitea release.
+
+Repository Actions must be enabled, an `ubuntu-latest` runner must be online,
+and the Actions job token must be allowed to write releases. Create a release
+with:
+
+```sh
+git tag -a v2026.07.22 -m "Presentation release"
+git push jnxpublic v2026.07.22
+```
