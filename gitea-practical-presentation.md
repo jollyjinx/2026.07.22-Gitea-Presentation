@@ -4,30 +4,33 @@ theme: gaia
 size: 16:9
 paginate: true
 footer: Gitea - 12. Stammtisch der Unix-Freunde Süd-Ost-Oberbayern - July 2026
+header: '<img class="corner-logo" src="images/gitea-logo.svg" alt="Gitea logo">'
 ---
 <style>
-section.logo-right {
-  padding-right: calc(40% + 70px);
-}
-
-section.logo-right > p:first-of-type {
+section > header {
   align-items: center;
+  bottom: 0;
   display: flex;
-  inset: 0 0 0 60%;
-  justify-content: center;
-  margin: 0;
-  position: absolute;
+  height: 70px;
+  left: 24px;
+  line-height: 1;
+  padding: 0;
+  right: auto;
+  top: auto;
 }
 
-section.logo-right > p:first-of-type img {
-  max-height: 100%;
-  max-width: 100%;
+section > header .corner-logo {
+  height: 44px;
+  width: auto;
+}
+
+section > footer {
+  padding-left: 82px;
 }
 </style>
 
-<!-- _class: lead logo-right -->
+<!-- _class: lead -->
 <!-- paginate: false -->
-![Gitea logo](images/gitea-logo.svg)
 
 # Gitea in XX Minutes
 ### Run your own collaborative Git service
@@ -135,12 +138,10 @@ git push -u origin feature/greeting
 | Operations | [Backup and restore](https://docs.gitea.com/administration/backup-and-restore) · [Upgrade guide](https://docs.gitea.com/installation/upgrade-from-gitea) |
 
 ---
-<!-- _class: lead logo-right -->
+<!-- _class: lead -->
 <!-- paginate: false -->
-![Gitea logo](images/gitea-logo.svg)
 
 # Gitea in XX Minutes
 ### Run your own collaborative Git service
 
  Patrick Stein
-
