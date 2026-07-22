@@ -1,37 +1,54 @@
 ---
 marp: true
 theme: gaia
+size: 16:9
 paginate: true
-footer: Gitea - 12. Stammtisch der Unix-Freunde Süd-Ost-Oberbayern · July 2026
+footer: Gitea - 12. Stammtisch der Unix-Freunde Süd-Ost-Oberbayern - July 2026
 ---
-<!-- _class: lead -->
+<style>
+section.logo-right {
+  padding-right: calc(40% + 70px);
+}
+
+section.logo-right > p:first-of-type {
+  align-items: center;
+  display: flex;
+  inset: 0 0 0 60%;
+  justify-content: center;
+  margin: 0;
+  position: absolute;
+}
+
+section.logo-right > p:first-of-type img {
+  max-height: 100%;
+  max-width: 100%;
+}
+</style>
+
+<!-- _class: lead logo-right -->
 <!-- paginate: false -->
-![bg right:40% contain](images/gitea-logo.svg)
+![Gitea logo](images/gitea-logo.svg)
 
 # Gitea in XX Minutes
-## July 2026
+### Run your own collaborative Git service
 
-Run your own collaborative Git service
+ Patrick Stein
 
 ---
 
-# Gitea 
+# Gitea
 
 - GitHub on your own hardware
 - Very simple setup and frontend
-- Normal git functionality (ssh/https)
-- Multiuser support (pull requests, reviews)
+- Normal Git functionality (SSH/HTTPS)
+- Multi-user support (pull requests, reviews)
 - Ticket system (issues, boards)
-- Run CI Services
+- Run CI services
 
 <!--
 branch protection
 -->
 ---
-
-<!-- _class: compact -->
-
-<p class="kicker">Start Gitea</p>
 
 ## Two commands create a durable demo
 
@@ -92,7 +109,7 @@ git push -u origin feature/greeting
 - Poll other servers
 - Merge requirements
 - Build release artifacts
-- supports OCI containers, Swift, npm, Maven, NuGet, PyPI, Cargo, generic files, and many other package formats
+- Supports OCI containers, Swift, npm, Maven, NuGet, PyPI, Cargo, generic files, and many other package formats
 ---
 
 ## Self-hosting responsibilities
@@ -105,7 +122,7 @@ git push -u origin feature/greeting
 - Monitor logs, storage growth, failed jobs, and backup freshness.
 
 
---- 
+---
 ## References
 | Topic | Documentation |
 |---|---|
@@ -118,13 +135,12 @@ git push -u origin feature/greeting
 | Operations | [Backup and restore](https://docs.gitea.com/administration/backup-and-restore) · [Upgrade guide](https://docs.gitea.com/installation/upgrade-from-gitea) |
 
 ---
-<!-- _class: lead -->
+<!-- _class: lead logo-right -->
 <!-- paginate: false -->
-![bg right:40% contain](images/gitea-logo.svg)
+![Gitea logo](images/gitea-logo.svg)
 
 # Gitea in XX Minutes
-## July 2026
+### Run your own collaborative Git service
 
-Run your own collaborative Git service
-
+ Patrick Stein
 
