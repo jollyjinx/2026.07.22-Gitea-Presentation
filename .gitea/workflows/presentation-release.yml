@@ -1,0 +1,58 @@
+name: Build presentation release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      code: read
+      releases: write
+
+    steps:
+      - name: Check out repository
+        uses: https://gitea.com/actions/checkout@v4
+
+      - name: Prepare output directory
+        run: mkdir -p dist
+
+      - name: Build HTML presentation
+        uses: docker://marpteam/marp-cli:v4.5.0
+        env:
+          MARP_USER: root:root
+        with:
+          args: >-
+            --html
+            gitea-practical-presentation.md
+            --output dist/gitea-practical-presentation.html
+
+      - name: Build PDF presentation
+        uses: docker://marpteam/marp-cli:v4.5.0
+        env:
+          MARP_USER: root:root
+        with:
+          args: >-
+            --html
+            --allow-local-files
+            gitea-practical-presentation.md
+            --output dist/gitea-practical-presentation.pdf
+
+      - name: Package HTML presentation and images
+        run: |
+          cp -R images dist/images
+          tar -czf dist/gitea-practical-presentation-html.tar.gz \
+            -C dist gitea-practical-presentation.html images
+
+      - name: Create Gitea release
+        uses: https://gitea.com/actions/gitea-release-action@v1.3.6
+        with:
+          token: ${{ secrets.GITEA_TOKEN }}
+          name: Presentation ${{ gitea.ref_name }}
+          files: |-
+            dist/gitea-practical-presentation.pdf
+            dist/gitea-practical-presentation-html.tar.gz
+          sha256sum: true
