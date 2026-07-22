@@ -121,7 +121,7 @@
       white-space: pre;
     }
     code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
-    .text-preview { cursor: zoom-in; max-height: 56vh; }
+    .text-preview { cursor: text; max-height: 56vh; }
     .comment { color: #7dd3fc; }
     .command { color: #a7f3d0; }
     .warn { color: #fbbf24; }
@@ -334,12 +334,13 @@
         <h2>Two commands create a durable demo</h2>
       </div>
       <pre class="text-preview"><code><span class="comment"># Apple container CLI — tested with Gitea 1.26.4</span>
-<span class="command">container volume create gitea-data</span>
+<span class="command">cd </span>
+<span class="command">mkdir gitea-data</span>
 
 <span class="command">container run --name gitea --detach \
   --publish 3000:3000 \
   --publish 2222:22 \
-  --volume gitea-data:/data \
+  --volume ${HOME}/gitea-data:/data \
   --env GITEA__server__SSH_PORT=2222 \
   --env GITEA__server__ROOT_URL=http://localhost:3000/ \
   docker.gitea.com/gitea:1.26.4</span>
@@ -713,6 +714,12 @@ open http://localhost:3000/api/swagger</code></pre>
       lightboxText.focus();
     }
 
+    function hasSelectionWithin(element) {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed || selection.rangeCount === 0) return false;
+      return selection.getRangeAt(0).intersectsNode(element);
+    }
+
     function hideLightbox() {
       lightbox.classList.remove("open", "show-image", "show-text");
       lightboxImage.src = "";
@@ -735,7 +742,9 @@ open http://localhost:3000/api/swagger</code></pre>
     });
 
     document.querySelectorAll(".text-preview").forEach((pre) => {
-      pre.addEventListener("click", () => openTextLightbox(pre));
+      pre.addEventListener("click", () => {
+        if (!hasSelectionWithin(pre)) openTextLightbox(pre);
+      });
       pre.setAttribute("tabindex", "0");
       pre.addEventListener("keydown", (event) => {
         if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openTextLightbox(pre); }
