@@ -1,0 +1,63 @@
+name: Build presentation release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: [self-hosted, macOS, ARM64, presentation]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Prepare output directory
+        run: mkdir -p dist
+
+      - name: Build HTML presentation
+        run: >-
+          npx --yes @marp-team/marp-cli@4.5.0
+          --html
+          gitea-practical-presentation.md
+          --output dist/gitea-practical-presentation.html
+
+      - name: Build PDF presentation
+        run: >-
+          npx --yes @marp-team/marp-cli@4.5.0
+          --html
+          --allow-local-files
+          gitea-practical-presentation.md
+          --output dist/gitea-practical-presentation.pdf
+
+      - name: Package HTML presentation and images
+        run: |
+          cp -R images dist/images
+          tar -czf dist/gitea-practical-presentation-html.tar.gz \
+            -C dist gitea-practical-presentation.html images
+
+      - name: Generate checksums
+        working-directory: dist
+        run: >-
+          shasum -a 256
+          gitea-practical-presentation.pdf
+          gitea-practical-presentation-html.tar.gz
+          > SHA256SUMS
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Presentation ${{ github.ref_name }}
+          files: |-
+            dist/gitea-practical-presentation.pdf
+            dist/gitea-practical-presentation-html.tar.gz
+            dist/SHA256SUMS

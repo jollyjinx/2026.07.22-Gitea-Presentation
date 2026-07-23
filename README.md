@@ -24,13 +24,19 @@ The local logo must remain at `images/gitea-logo.svg` so Marp can resolve it fro
 The committed Gitea Actions workflow at
 `.gitea/workflows/presentation-release.yml` builds a PDF and an HTML bundle
 when a tag beginning with `v` is pushed. It publishes both files as assets on
-the corresponding Gitea release.
+the corresponding Gitea release. The GitHub Actions workflow at
+`.github/workflows/presentation-release.yml` builds the same files natively on
+the repository's Apple Silicon macOS runner and publishes a GitHub release.
 
-Repository Actions must be enabled, an `ubuntu-latest` runner must be online,
-and the Actions job token must be allowed to write releases. Create a release
-with:
+For Gitea, Repository Actions must be enabled, an `ubuntu-latest` runner must
+be online, and the Actions job token must be allowed to write releases. For
+GitHub, register a repository runner with the default `self-hosted`, `macOS`,
+and `ARM64` labels plus the custom `presentation` label.
+
+Create matching releases by pushing the same annotated tag to both remotes:
 
 ```sh
 git tag -a v2026.07.22 -m "Presentation release"
 git push jnxpublic v2026.07.22
+git push github v2026.07.22
 ```

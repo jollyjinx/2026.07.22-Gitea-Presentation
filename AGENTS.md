@@ -19,6 +19,12 @@ marp --html gitea-practical-presentation.md --output gitea-practical-presentatio
 
 Keep `images/gitea-logo.svg` at its current relative path. After content or CSS changes, render the deck and inspect every slide for overflow, clipped content, and unreadably small text.
 
+## Release workflows
+
+- `.gitea/workflows/presentation-release.yml` runs in the Gitea runner's Linux container environment.
+- `.github/workflows/presentation-release.yml` runs natively on the Apple Silicon macOS GitHub runner labeled `presentation`; do not use Docker container actions in that workflow.
+- Push the same annotated `v*` tag to `jnxpublic` and `github` when publishing on both services.
+
 ## Content conventions
 
 - Separate slides with `---`.
