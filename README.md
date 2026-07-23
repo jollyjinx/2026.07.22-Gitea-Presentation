@@ -25,13 +25,12 @@ The committed Gitea Actions workflow at
 `.gitea/workflows/presentation-release.yml` builds a PDF and an HTML bundle
 when a tag beginning with `v` is pushed. It publishes both files as assets on
 the corresponding Gitea release. The GitHub Actions workflow at
-`.github/workflows/presentation-release.yml` builds the same files natively on
-the repository's Apple Silicon macOS runner and publishes a GitHub release.
+`.github/workflows/presentation-release.yml` builds the same files on a
+GitHub-hosted Ubuntu runner and publishes a GitHub release.
 
 For Gitea, Repository Actions must be enabled, an `ubuntu-latest` runner must
-be online, and the Actions job token must be allowed to write releases. For
-GitHub, register a repository runner with the default `self-hosted`, `macOS`,
-and `ARM64` labels plus the custom `presentation` label.
+be online, and the Actions job token must be allowed to write releases. GitHub
+uses its hosted `ubuntu-latest` runner; no GitHub self-hosted runner is needed.
 
 Create matching releases by pushing the same annotated tag to both remotes:
 

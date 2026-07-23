@@ -22,7 +22,7 @@ Keep `images/gitea-logo.svg` at its current relative path. After content or CSS 
 ## Release workflows
 
 - `.gitea/workflows/presentation-release.yml` runs in the Gitea runner's Linux container environment.
-- `.github/workflows/presentation-release.yml` runs natively on the Apple Silicon macOS GitHub runner labeled `presentation`; do not use Docker container actions in that workflow.
+- `.github/workflows/presentation-release.yml` runs on GitHub's hosted `ubuntu-latest` runner.
 - Push the same annotated `v*` tag to `jnxpublic` and `github` when publishing on both services.
 
 ## Content conventions
