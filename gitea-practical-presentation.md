@@ -7,6 +7,24 @@ footer: Gitea - 12. Stammtisch der Unix-Freunde Süd-Ost-Oberbayern - July 2026
 header: '<img class="corner-logo" src="images/gitea-logo.svg" alt="Gitea logo">'
 ---
 <style>
+section.logo-right {
+  padding-right: calc(40% + 70px);
+}
+
+section.logo-right > p:first-of-type {
+  align-items: center;
+  display: flex;
+  inset: 0 0 0 60%;
+  justify-content: center;
+  margin: 0;
+  position: absolute;
+}
+
+section.logo-right > p:first-of-type img {
+  max-height: 100%;
+  max-width: 100%;
+}
+
 section > header {
   align-items: center;
   bottom: 0;
@@ -27,10 +45,15 @@ section > header .corner-logo {
 section > footer {
   padding-left: 82px;
 }
+
+section.references table {
+  font-size: 30px;
+}
 </style>
 
-<!-- _class: lead -->
+<!-- _class: lead logo-right -->
 <!-- paginate: false -->
+![Gitea logo](images/gitea-logo.svg)
 
 # Gitea in 15 Minutes
 ### Run your own collaborative Git service
@@ -126,6 +149,7 @@ git push -u origin feature/greeting
 
 
 ---
+<!-- _class: references -->
 ## References
 | Topic | Documentation |
 |---|---|
@@ -139,7 +163,9 @@ git push -u origin feature/greeting
 
 ---
 <!-- _class: lead -->
+<!-- _class: lead logo-right -->
 <!-- paginate: false -->
+![Gitea logo](images/gitea-logo.svg)
 
 # Gitea in 15 Minutes
 ### Run your own collaborative Git service
