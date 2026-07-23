@@ -32,7 +32,7 @@ section > footer {
 <!-- _class: lead -->
 <!-- paginate: false -->
 
-# Gitea in XX Minutes
+# Gitea in 15 Minutes
 ### Run your own collaborative Git service
 
  Patrick Stein
@@ -141,7 +141,7 @@ git push -u origin feature/greeting
 <!-- _class: lead -->
 <!-- paginate: false -->
 
-# Gitea in XX Minutes
+# Gitea in 15 Minutes
 ### Run your own collaborative Git service
 
  Patrick Stein
